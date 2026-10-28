@@ -58,7 +58,7 @@ module Postal
           response = http.request(request)
         rescue StandardError => e
           logger.error "Error talking to rspamd: #{e.class} (#{e.message})"
-          logger.error e.backtrace[0, 5]
+          logger.error e.backtrace[0, 5].join("\n")
 
           raise Error, "Error when scanning with rspamd (#{e.class})"
         end
