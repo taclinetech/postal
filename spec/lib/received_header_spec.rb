@@ -45,4 +45,37 @@ describe ReceivedHeader do
       end
     end
   end
+
+  describe ".parse" do
+    let(:smtp_hostname) { Postal::Config.postal.smtp_hostname }
+
+    it "returns the HELO and IP address from a header written by .generate" do
+      header = described_class.generate(nil, "mail.example.com", "192.0.2.10", :smtp)
+      expect(described_class.parse(header)).to eq(helo: "mail.example.com", ip_address: "192.0.2.10")
+    end
+
+    it "reads an IPv6 address" do
+      header = "from mail.example.com (hostname.com [2001:db8::1]) by #{smtp_hostname} with SMTP; #{Time.now.utc.rfc2822}"
+      expect(described_class.parse(header)).to eq(helo: "mail.example.com", ip_address: "2001:db8::1")
+    end
+
+    it "returns nil for a header written with privacy mode on" do
+      header = described_class.generate(Server.new(privacy_mode: true), "mail.example.com", "192.0.2.10", :smtp)
+      expect(described_class.parse(header)).to be_nil
+    end
+
+    it "returns nil for a header written for the HTTP API" do
+      header = described_class.generate(nil, "web-ui", "192.0.2.10", :http)
+      expect(described_class.parse(header)).to be_nil
+    end
+
+    it "returns nil for a header another server wrote" do
+      header = "from mail.example.com (hostname.com [192.0.2.10]) by mx.example.org with SMTP; #{Time.now.utc.rfc2822}"
+      expect(described_class.parse(header)).to be_nil
+    end
+
+    it "returns nil for nil" do
+      expect(described_class.parse(nil)).to be_nil
+    end
+  end
 end
